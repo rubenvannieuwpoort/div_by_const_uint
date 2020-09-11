@@ -6,9 +6,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+// Double 'init' modulo d until it is less than 2^(k - M), return k
 int loop_k(uint d, uint init, uint M) {
 	int k = N;
 	for (uint mod = init, pow = 1 << (k - M); mod > pow; pow <<= 1, k++) {
+		// overflow-safe way of doubling 'mod' modulo d
 		if (mod < d - mod) mod += mod;
 		else mod -= d - mod;
 	}
@@ -25,14 +27,14 @@ expression_t mul_based_div_by_const_uint(uint d, expression_t n) {
 	uint k = loop_k(d, minus_mod, N);
 	uint bits = k + 1 - ceil_log2(d);
 	if (bits <= N) {
-		// cooperative divisor
+		// Algorithm B: cooperative divisors
 		uint m = calc_m(d, k) + 1;
 		expression_t hiword = umulhi(n, constant(m));
 		if (k == N) return hiword;
 		else return shr(hiword, constant(k - N));
 	}
 	if (d % 2 == 0) {
-		// even uncooperative divisor
+		// Algorithm C: even uncooperative divisors
  		uint p = powers_of_two(d);
 		uint q = d >> p;
 		mod = (uint)(~q + 1) % q; // 2^N mod d
@@ -47,7 +49,7 @@ expression_t mul_based_div_by_const_uint(uint d, expression_t n) {
 		else return shr(hiword, constant(k - N));
 	}
 	else {
-		// odd uncooperative divisor
+		// Algorithm D: odd uncooperative divisors
 		k = loop_k(d, mod, N);
 		bits = k + 1 - ceil_log2(d);
 		assert(bits <= N);
@@ -61,23 +63,12 @@ expression_t mul_based_div_by_const_uint(uint d, expression_t n) {
 
 expression_t div_by_const_uint(const uint d, expression_t n) {
 	if (is_power_of_two(d)) {
-		if (d == 1)
-		{
-			return n;
-		}
-		else {
-			expression_t result = shr(n, constant(floor_log2(d)));
-			return result;
-		}
+		if (d == 1) return n;
+		else return shr(n, constant(floor_log2(d)));
 	}
 	else {
-		if (d > MAX / 2) {
-			expression_t result = gte(n, constant(d));
-			return result;
-		}
-		else {
-			return mul_based_div_by_const_uint(d, n);
-		}
+		if (d > MAX / 2) return gte(n, constant(d));
+		else return mul_based_div_by_const_uint(d, n);
 	}
 }
 
