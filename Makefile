@@ -1,5 +1,10 @@
-div: bits.h compiler.cpp compiler.h main.cpp Makefile README.md utils.cpp utils.h
-	g++ compiler.cpp main.cpp utils.cpp -o div
+all: compile runtime
+
+compile: compile.cpp compiler.h bits.h
+	g++ -O3 compile.cpp -o compile
+
+runtime: runtime.cpp bits.h
+	g++ -O3 runtime.cpp -o runtime
 
 clean:
-	rm -f div
+	rm -f compile runtime
